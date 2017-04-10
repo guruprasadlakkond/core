@@ -16,6 +16,7 @@
 var logger = require('_pr/logger')(module);
 var botsNewService = require('_pr/services/botsNewService.js');
 var botsDao = require('_pr/model/bots/1.1/botsDao.js');
+var CATEGORY = 'botExecution'; 
 
 module.exports.setRoutes = function(app, sessionVerificationFunc) {
     app.all('/botsNew*', sessionVerificationFunc);
@@ -83,7 +84,7 @@ module.exports.setRoutes = function(app, sessionVerificationFunc) {
         })
     });
 
-    app.post('/botsNew',function(req,res){
+    app.post('/botsNew', function(req,res){
         botsNewService.createNew(req.body.bots, function(err,data){
             if (err) {
                 return res.status(500).send(err);
@@ -93,7 +94,7 @@ module.exports.setRoutes = function(app, sessionVerificationFunc) {
         })
     });
 
-    app.post('/botsNew/:botId/execute',function(req,res){
+    app.post('/botsNew/:botId/execute', checkPermission, function(req,res){
         var executionType = null;
         if(req.query.executionType && req.query.executionType !== null){
             executionType = req.query.executionType;
@@ -148,4 +149,19 @@ module.exports.setRoutes = function(app, sessionVerificationFunc) {
             }
         })
     });
+    
+    function checkPermission(req, res, next){
+    	//Authorize user to create / modify.
+        var user = req.session.user;
+        var permissionto = 'execute';
+
+        usersDao.haspermission(user.cn, CATEGORY, permissionto, null, req.session.user.permissionset, function (err, data) {
+            if (err) {
+                logger.debug('Returned from haspermission : ' + data + ' : ' + (data == false));
+                res.status(500).send("Server Error");
+                return;
+            }
+            next();
+        });
+    }
 };
