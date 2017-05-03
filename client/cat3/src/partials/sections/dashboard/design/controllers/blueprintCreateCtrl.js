@@ -59,14 +59,16 @@
             $scope.chefrunlist = [];
             $scope.cookbookAttributes = [];
             blueprintCreation.templateListing = function(){
-                bpCreateSer.getTemplates().then(function(data){
-                    $scope.templateList = data;
-                    for(var i=0;i<$scope.templateList.length;i++){
-                        if($scope.templateList[i].templatesicon_filePath){
-                            $scope.templateList[i].templatesicon_filePath = '/d4dMasters/image/' + $scope.templateList[i].templatesicon_filePath;
+                if($rootScope.organNewEnt) {
+                    bpCreateSer.getTemplates($rootScope.organNewEnt.org.orgid).then(function(data){
+                        $scope.templateList = data;
+                        for(var i=0;i<$scope.templateList.length;i++){
+                            if($scope.templateList[i].templatesicon_filePath){
+                                $scope.templateList[i].templatesicon_filePath = '/d4dMasters/image/' + $scope.templateList[i].templatesicon_filePath;
+                            }
                         }
-                    }
-                });
+                    });
+                }
             };
 
             $scope.blueprintTemplateClick = function(templateDetail) {
@@ -90,7 +92,7 @@
                         dockerlaunchparameters : '',
                         dockerreponame : $scope.templateSelected.dockerreponame
                     };
-                    dockerParams.dockerlaunchparameters = ' --name ' + dockerParams.dockercontainerpathstitle;
+                    dockerParams.dockerlaunchparameters = ' -name ' + dockerParams.dockercontainerpathstitle;
                     dockerParams.dockerrepotags = 'latest';
                     //gives the dockerParams details to show up the image in the first step of wizard.
                     $scope.dockerDetails.push(dockerParams);
@@ -319,29 +321,12 @@
 
 
             blueprintCreation.getOrgBUProjDetails = function() {
-                /*bpCreateSer.getOrgBuProj().then(function(data){
-                 blueprintCreation.orgBUProjListing = data;
-                 });*/
-                blueprintCreation.newEnt.orgList='0';
+                blueprintCreation.newEnt.orgList=$rootScope.organObject.indexOf($rootScope.organNewEnt.org).toString();
                 blueprintCreation.newEnt.bgList='0';
                 blueprintCreation.newEnt.projectList='0';
                 blueprintCreation.getChefServer();
                 blueprintCreation.enableAppDeploy();
             };
-
-            /*blueprintCreation.getBG = function() {
-             if(blueprintCreation.newEnt.orgList) {
-             var buProjDetails = blueprintCreation.orgBUProjListing;
-             blueprintCreation.bgListing = buProjDetails;
-             }
-             };
-
-             blueprintCreation.getProject = function() {
-             if(blueprintCreation.newEnt.orgList && blueprintCreation.newEnt.orgList) {
-             var buProjDetails = blueprintCreation.orgBUProjListing;
-             blueprintCreation.projListing = buProjDetails;
-             }
-             };*/
 
             blueprintCreation.enableAppDeploy = function() {
                 if(blueprintCreation.newEnt.projectList) {
@@ -818,12 +803,20 @@
                         blueprintCreateJSON.cftTemplateFile = $scope.cftTemplate;
                         var cftInstances = [];
                         angular.forEach(blueprintCreation.newEnt.cftModelResources , function(value, key) {
-                            var instanceObj = {
-                                logicalId: key,
-                                username: value,
-                                runlist: responseFormatter.formatSelectedChefRunList($scope.runlistWithKey[key]),
-                                attributes: responseFormatter.formatSelectedCookbookAttributes($scope.cookbookAttributesWithKey[key])
-                            };
+                            var instanceObj = null;
+                            if($scope.runlistWithKey[key]) {
+                                instanceObj = {
+                                    logicalId: key,
+                                    username: value,
+                                    runlist: responseFormatter.formatSelectedChefRunList($scope.runlistWithKey[key]),
+                                    attributes: responseFormatter.formatSelectedCookbookAttributes($scope.cookbookAttributesWithKey[key])
+                                };
+                            } else {
+                                instanceObj = {
+                                    logicalId: key,
+                                    username: value
+                                };
+                            }
                             cftInstances.push(instanceObj);
                             blueprintCreateJSON.cftInstances = cftInstances;
                         });
@@ -841,15 +834,21 @@
                         });
                         blueprintCreateJSON.blueprintType = 'azure_arm';
                         blueprintCreateJSON.cftTemplateFile = $scope.cftTemplate;
-                        var instanceObj = {};
+                        var instanceObj = null;
                         for(var i =0;i<blueprintCreation.getAzureVMDetails.length;i++){
-
+                        if($scope.runlistWithKey){
                             instanceObj[blueprintCreation.getAzureVMDetails[i].name]= {
                                 username: blueprintCreation.getAzureVMDetails[i].username,
                                 password: blueprintCreation.getAzureVMDetails[i].password,
                                 runlist: responseFormatter.formatSelectedChefRunList($scope.runlistWithKey[blueprintCreation.getAzureVMDetails[i].name]),
                                 attributes: responseFormatter.formatSelectedCookbookAttributes($scope.cookbookAttributesWithKey[blueprintCreation.getAzureVMDetails[i].name])
                             };
+                        } else {
+                            instanceObj[blueprintCreation.getAzureVMDetails[i].name]= {
+                                username: blueprintCreation.getAzureVMDetails[i].username,
+                                password: blueprintCreation.getAzureVMDetails[i].password
+                            };
+                        }
                             blueprintCreateJSON.cftInstances = instanceObj;
 
                         }
@@ -907,4 +906,4 @@
                 }
             });
         }]);
-})(angular);
+}(angular));
