@@ -17,6 +17,7 @@ var logger = require('_pr/logger')(module);
 var botsNewService = require('_pr/services/botsNewService.js');
 var botsDao = require('_pr/model/bots/1.1/botsDao.js');
 var CATEGORY = 'botExecution'; 
+var usersDao = require('_pr/model/users.js');
 
 module.exports.setRoutes = function(app, sessionVerificationFunc) {
     app.all('/botsNew*', sessionVerificationFunc);
